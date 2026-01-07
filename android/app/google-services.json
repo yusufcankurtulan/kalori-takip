@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "217873707244",
+    "project_id": "kalori-takip-8473f",
+    "storage_bucket": "kalori-takip-8473f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:217873707244:android:1cfbf8e3000654764eb5c9",
+        "android_client_info": {
+          "package_name": "com.example.kaloritakip"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCNoY0GX3vXYBFE_fKES3h38B8XtcIolB0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:217873707244:android:b35facf72ef53e8a4eb5c9",
+        "android_client_info": {
+          "package_name": "com.yusuf.kaloritakip"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCNoY0GX3vXYBFE_fKES3h38B8XtcIolB0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
