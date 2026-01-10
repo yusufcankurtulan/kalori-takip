@@ -32,3 +32,4 @@ flutter run
 Notlar
 - AI servisleri için `lib/services/ai_service.dart` içinde placeholder URL'ler var. Bu URL'leri kendi Cloud Function veya API anahtarlarınızla değiştirin.
 - Bu bir prototip. Görüntü sınıflandırma için Google Vision / Clarifai / custom model kullanılabilir.
+# kalori-takip
