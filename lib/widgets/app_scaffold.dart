@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../l10n/app_localizations.dart';
+import '../theme.dart';
 
 class AppScaffold extends StatelessWidget {
   final Widget body;
@@ -29,47 +30,30 @@ class AppScaffold extends StatelessWidget {
     final labelHome = appLoc.homeTitle;
     final labelProfile = appLoc.profileTitle;
     final labelSettings = appLoc.settingsTitle;
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFF2E7D32), Color(0xFF66BB6A)],
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      appBar: title != null
+          ? AppBar(
+              title: Text(title!),
+            )
+          : null,
+      body: SafeArea(child: body),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(colors: [AppTheme.primaryColor, AppTheme.secondaryColor]),
+          boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, -2))],
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
         ),
-      ),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        appBar: title != null
-            ? AppBar(
-                title: Text(title!),
-                backgroundColor: Colors.transparent,
-                elevation: 0,
-              )
-            : null,
-        body: SafeArea(child: body),
-        bottomNavigationBar: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(colors: [Color(0xFF2E7D32), Color(0xFF66BB6A)]),
-            boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, -2))],
-            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-            child: BottomNavigationBar(
-              currentIndex: currentIndex,
-              type: BottomNavigationBarType.fixed,
-              selectedItemColor: Colors.white,
-              unselectedItemColor: Colors.white70,
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              selectedIconTheme: IconThemeData(size: 28),
-              onTap: (i) => _onTap(context, i),
-              items: [
-                BottomNavigationBarItem(icon: Icon(Icons.home), label: labelHome),
-                BottomNavigationBarItem(icon: Icon(Icons.person), label: labelProfile),
-                BottomNavigationBarItem(icon: Icon(Icons.settings), label: labelSettings),
-              ],
-            ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+          child: BottomNavigationBar(
+            currentIndex: currentIndex,
+            onTap: (i) => _onTap(context, i),
+            items: [
+              BottomNavigationBarItem(icon: Icon(Icons.home), label: labelHome),
+              BottomNavigationBarItem(icon: Icon(Icons.person), label:labelProfile),
+              BottomNavigationBarItem(icon: Icon(Icons.settings), label: labelSettings),
+            ],
           ),
         ),
       ),

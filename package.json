@@ -1,0 +1,30 @@
+{
+  "name": "kalori-takip",
+  "version": "1.0.0",
+  "description": "Basit, cross-platform bir kalori takip uygulaması—AI entegrasyonlu prototip.",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yusufcankurtulan/kalori-takip.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/yusufcankurtulan/kalori-takip/issues"
+  },
+  "homepage": "https://github.com/yusufcankurtulan/kalori-takip#readme",
+  "dependencies": {
+    "axios": "^1.13.2",
+    "cors": "^2.8.5",
+    "express": "^5.2.1"
+  }
+}

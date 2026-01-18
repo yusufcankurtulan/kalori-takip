@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models/user_profile.dart';
 import '../services/auth_service.dart';
 import '../widgets/app_scaffold.dart';
 import '../services/user_service.dart';
@@ -11,18 +12,18 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context);
 
-    final body = FutureBuilder<Map<String, dynamic>>(
+    final body = FutureBuilder<UserProfile?>(
       future: _loadProfile(),
       builder: (context, snap) {
         if (snap.connectionState == ConnectionState.waiting) {
           return Center(child: CircularProgressIndicator());
         }
 
-        final data = snap.data ?? {};
-        final age = (data['age'] ?? 0).toString();
-        final height = (data['height'] ?? 0.0).toString();
-        final weight = (data['weight'] ?? 0.0).toString();
-        final gender = (data['gender'] ?? '').toString();
+        final userProfile = snap.data;
+        final name = userProfile?.name ?? 'User';
+        final age = userProfile?.age.toString() ?? '0';
+        final height = userProfile?.height.toString() ?? '0.0';
+        final weight = userProfile?.weight.toString() ?? '0.0';
 
         return Padding(
           padding: const EdgeInsets.all(16.0),
@@ -34,8 +35,8 @@ class ProfileScreen extends StatelessWidget {
               Card(
                 child: ListTile(
                   leading: Icon(Icons.person),
-                  title: Text('User'),
-                  subtitle: Text(gender.isNotEmpty ? gender : loc.profileNotSet),
+                  title: Text(name),
+                  subtitle: Text(userProfile?.goal ?? loc.profileNotSet),
                   trailing: TextButton(
                     onPressed: () {
                       Navigator.push(context, MaterialPageRoute(builder: (_) => UserInfoScreen()));
@@ -95,9 +96,9 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Future<Map<String, dynamic>> _loadProfile() async {
+  Future<UserProfile?> _loadProfile() async {
     final uid = AuthService.currentUser?.uid;
-    if (uid == null) return {};
+    if (uid == null) return null;
     return await UserService.getProfile(uid);
   }
 }

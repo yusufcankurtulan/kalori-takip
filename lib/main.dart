@@ -13,6 +13,7 @@ import 'services/theme_service.dart';
 import 'services/locale_service.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'l10n/app_localizations.dart';
+import 'theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,17 +44,8 @@ class MyApp extends StatelessWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: const [Locale('tr'), Locale('en')],
-      theme: ThemeData(
-        brightness: Brightness.light,
-        primarySwatch: Colors.green,
-        scaffoldBackgroundColor: Colors.transparent,
-        useMaterial3: true,
-      ),
-      darkTheme: ThemeData(
-        brightness: Brightness.dark,
-        primarySwatch: Colors.green,
-        scaffoldBackgroundColor: Colors.transparent,
-      ),
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
       themeMode: themeSvc.themeMode,
       locale: localeSvc.locale,
       routes: {
@@ -64,27 +56,13 @@ class MyApp extends StatelessWidget {
         '/user_info': (_) => UserInfoScreen(),
         '/camera': (_) => CameraScreen(),
       },
-      home: _AppBackground(child: AuthGate()),
-    );
-  }
-}
-
-class _AppBackground extends StatelessWidget {
-  final Widget child;
-  
-  const _AppBackground({required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFF2E7D32), Color(0xFF66BB6A)],
-        ),
-      ),
-      child: child,
+      builder: (context, child) {
+        return Container(
+          decoration: AppTheme.gradientDecoration,
+          child: child,
+        );
+      },
+      home: AuthGate(),
     );
   }
 }

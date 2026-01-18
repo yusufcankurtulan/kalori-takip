@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../models/user_profile.dart';
 import '../services/user_service.dart';
 import 'home_screen.dart';
 import '../l10n/app_localizations.dart';
+import '../theme.dart';
 
 class UserInfoScreen extends StatefulWidget {
   const UserInfoScreen({Key? key}) : super(key: key);
@@ -16,7 +18,6 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
   final _heightCtrl = TextEditingController();
   final _weightCtrl = TextEditingController();
   final _ageCtrl = TextEditingController();
-  String _gender = 'Male';
   bool _loading = false;
   String? _error;
 
@@ -38,16 +39,11 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
     final profile = await UserService.getProfile(uid);
-    if (profile.isEmpty) return;
+    if (profile == null) return;
     setState(() {
-      final h = profile['height'];
-      final w = profile['weight'];
-      final a = profile['age'];
-      final g = profile['gender'];
-      if (h != null && h is num) _heightCtrl.text = h.toString();
-      if (w != null && w is num) _weightCtrl.text = w.toString();
-      if (a != null && a is num) _ageCtrl.text = a.toString();
-      if (g != null && g is String && g.isNotEmpty) _gender = g;
+      _heightCtrl.text = profile.height.toString();
+      _weightCtrl.text = profile.weight.toString();
+      _ageCtrl.text = profile.age.toString();
     });
   }
 
@@ -85,13 +81,15 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
       return;
     }
 
-    final profile = {
-      'height': heightVal,
-      'weight': weightVal,
-      'age': ageVal,
-      'gender': _gender,
-      'createdAt': DateTime.now().toIso8601String(),
-    };
+    final profile = UserProfile(
+      id: user.uid,
+      name: user.displayName ?? user.email ?? 'No Name',
+      age: ageVal,
+      height: heightVal,
+      weight: weightVal,
+      goal: 'maintain', // Default value
+      activityLevel: 'sedentary', // Default value
+    );
 
     try {
       await UserService.saveProfile(user.uid, profile);
@@ -111,6 +109,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: SafeArea(
@@ -123,23 +122,19 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
                 children: [
                   // Header Icon and Title
                   Center(
-                    child: Icon(Icons.person_add, size: 80, color: Colors.white),
+                    child: Icon(Icons.person_add, size: 80, color: AppTheme.textColor),
                   ),
                   SizedBox(height: 16),
                   Text(
                     AppLocalizations.of(context).profileHeaderTitle,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+                    style: theme.textTheme.displayLarge,
                   ),
                   SizedBox(height: 8),
                   Text(
                     AppLocalizations.of(context).profileHeaderSubtitle,
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 14, color: Colors.white70),
+                    style: theme.textTheme.bodyLarge,
                   ),
                   SizedBox(height: 32),
 
@@ -150,14 +145,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
                     decoration: InputDecoration(
                       labelText: AppLocalizations.of(context).height,
                       hintText: '170',
-                      prefixIcon: Icon(Icons.height, color: Color(0xFF2E7D32)),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                      filled: true,
-                      fillColor: Colors.white,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      prefixIcon: Icon(Icons.height),
                     ),
                   ),
                   SizedBox(height: 16),
@@ -169,14 +157,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
                     decoration: InputDecoration(
                       labelText: AppLocalizations.of(context).weight,
                       hintText: '70',
-                      prefixIcon: Icon(Icons.scale, color: Color(0xFF2E7D32)),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                      filled: true,
-                      fillColor: Colors.white,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      prefixIcon: Icon(Icons.scale),
                     ),
                   ),
                   SizedBox(height: 16),
@@ -188,43 +169,7 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
                     decoration: InputDecoration(
                       labelText: AppLocalizations.of(context).age,
                       hintText: '25',
-                      prefixIcon: Icon(Icons.cake, color: Color(0xFF2E7D32)),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                      filled: true,
-                      fillColor: Colors.white,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    ),
-                  ),
-                  SizedBox(height: 16),
-
-                  // Gender Dropdown
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: DropdownButtonFormField<String>(
-                      initialValue: _gender,
-                      items: [
-                        DropdownMenuItem(value: 'Male', child: Row(children: [Icon(Icons.male, color: Color(0xFF2E7D32)), SizedBox(width: 8), Text(AppLocalizations.of(context).genderMale)])),
-                        DropdownMenuItem(value: 'Female', child: Row(children: [Icon(Icons.female, color: Color(0xFF2E7D32)), SizedBox(width: 8), Text(AppLocalizations.of(context).genderFemale)])),
-                        DropdownMenuItem(value: 'Other', child: Row(children: [Icon(Icons.wc, color: Color(0xFF2E7D32)), SizedBox(width: 8), Text(AppLocalizations.of(context).genderOther)])),
-                      ],
-                      onChanged: (v) => setState(() => _gender = v ?? 'Male'),
-                      decoration: InputDecoration(
-                        labelText: AppLocalizations.of(context).gender,
-                        prefixIcon: Icon(Icons.wc, color: Color(0xFF2E7D32)),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
-                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      ),
+                      prefixIcon: Icon(Icons.cake),
                     ),
                   ),
                   SizedBox(height: 24),
@@ -247,28 +192,15 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
                   // Submit Button
                   ElevatedButton(
                     onPressed: _loading ? null : _submit,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
                     child: _loading
                             ? SizedBox(
                             height: 20,
                             width: 20,
                             child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation(Color(0xFF2E7D32)),
                               strokeWidth: 2,
                             ),
                           )
-                        : Text(
-                            AppLocalizations.of(context).saveAndContinue,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF2E7D32),
-                            ),
-                          ),
+                        : Text(AppLocalizations.of(context).saveAndContinue),
                   ),
                 ],
               ),

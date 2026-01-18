@@ -1,103 +1,131 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-
-// Firestore is optional — if available we'll try to persist profile there.
 import 'package:cloud_firestore/cloud_firestore.dart' as fs;
+import 'package:connectivity_plus/connectivity_plus.dart';
+import '../models/user_profile.dart';
+import 'logging_service.dart';
 
 class UserService {
-  static const _prefKeyPrefix = 'profile_completed_';
+    // Program sorularının cevaplarını Firestore'a kaydet
+    static Future<void> saveProgramAnswers(String uid, String programKey, Map<String, dynamic> answers) async {
+      try {
+        await fs.FirebaseFirestore.instance
+            .collection('users')
+            .doc(uid)
+            .collection('programAnswers')
+            .doc(programKey)
+            .set(answers, fs.SetOptions(merge: true));
+      } catch (e, s) {
+        LoggingService.logError('Failed to save program answers', e, s);
+      }
+    }
+  // SharedPreferences erişimi için public yardımcı fonksiyon
+  static Future<SharedPreferences> getPrefs() async {
+    return await SharedPreferences.getInstance();
+  }
+  static const _profilePrefix = 'profile_';
+  static const _dirtyProfilePrefix = 'dirty_profile_';
+
 
   // Returns true if the user's profile is already completed.
   static Future<bool> isProfileComplete(String uid) async {
-    try {
-      // Try Firestore first
-      final doc = await fs.FirebaseFirestore.instance.collection('users').doc(uid).get();
-      if (doc.exists) {
-        final data = doc.data();
-        if (data != null && data['profileComplete'] == true) return true;
-      }
-    } catch (e) {
-      // Firestore may not be configured / available in dev environment.
-    }
+    final profile = await getProfile(uid);
+    // A profile is considered complete if it exists and the goal is not empty.
+    // This is a simple check, could be made more robust.
+    return profile != null && profile.goal.isNotEmpty;
+  }
 
-    // Fallback to SharedPreferences flag
+  // Save profile data. Implements a write-through cache.
+  static Future<void> saveProfile(String uid, UserProfile profile) async {
+    // Always update the local cache first.
     try {
       final prefs = await SharedPreferences.getInstance();
-      return prefs.getBool('$_prefKeyPrefix$uid') ?? false;
-    } catch (e) {
-      return false;
+      final profileJson = jsonEncode(profile.toJson());
+      await prefs.setString('$_profilePrefix$uid', profileJson);
+    } catch (e, s) {
+      LoggingService.logError('Failed to save profile to SharedPreferences', e, s);
+    }
+
+    // Try to write to Firestore.
+    try {
+      await fs.FirebaseFirestore.instance.collection('users').doc(uid).set(profile.toJson(), fs.SetOptions(merge: true));
+      // If successful, remove the 'dirty' flag.
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('$_dirtyProfilePrefix$uid');
+    } catch (e, s) {
+      LoggingService.logError('Failed to save profile to Firestore', e, s);
+      // If Firestore write fails, mark the profile as 'dirty'.
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('$_dirtyProfilePrefix$uid', true);
     }
   }
 
-  // Save profile data: writes to Firestore (if available) and to shared prefs.
-  static Future<void> saveProfile(String uid, Map<String, dynamic> profile) async {
-    // Ensure profileComplete flag is set
-    final withFlag = Map<String, dynamic>.from(profile);
-    withFlag['profileComplete'] = true;
+  // Read profile data. Implements a cache-aside strategy.
+  static Future<UserProfile?> getProfile(String uid) async {
+    UserProfile? profile;
+    final prefs = await SharedPreferences.getInstance();
 
-    var wrote = false;
-    try {
-      await fs.FirebaseFirestore.instance.collection('users').doc(uid).set(withFlag, fs.SetOptions(merge: true));
-      wrote = true;
-    } catch (e) {
-      // ignore firestore error in dev
-    }
-
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('$_prefKeyPrefix$uid', true);
-      if (!wrote) {
-        // store minimal profile for local use
-        await prefs.setInt('user_age_$uid', (profile['age'] ?? 0) as int);
-        await prefs.setDouble('user_height_$uid', (profile['height'] ?? 0.0) as double);
-        await prefs.setDouble('user_weight_$uid', (profile['weight'] ?? 0.0) as double);
-        await prefs.setString('user_gender_$uid', (profile['gender'] ?? '') as String);
+    // Try to get data from Firestore if online.
+    var connectivityResult = await (Connectivity().checkConnectivity());
+    if (connectivityResult != ConnectivityResult.none) {
+      try {
+        final doc = await fs.FirebaseFirestore.instance.collection('users').doc(uid).get();
+        if (doc.exists && doc.data() != null) {
+          final data = doc.data()!;
+          data['id'] = doc.id;
+          profile = UserProfile.fromJson(data);
+          // Update cache
+          final profileJson = jsonEncode(profile.toJson());
+          await prefs.setString('$_profilePrefix$uid', profileJson);
+        }
+      } catch (e, s) {
+        LoggingService.logError('Failed to get profile from Firestore', e, s);
       }
-    } catch (e) {
-      // ignore prefs errors
     }
-  }
 
-  // Read profile data. Tries Firestore first, then SharedPreferences fallback.
-  static Future<Map<String, dynamic>> getProfile(String uid) async {
-    try {
-      final doc = await fs.FirebaseFirestore.instance.collection('users').doc(uid).get();
-      if (doc.exists) {
-        final data = doc.data();
-        if (data != null) return Map<String, dynamic>.from(data);
+    // If we don't have a profile from Firestore, try the cache.
+    if (profile == null) {
+      try {
+        final profileJson = prefs.getString('$_profilePrefix$uid');
+        if (profileJson != null) {
+          profile = UserProfile.fromJson(jsonDecode(profileJson));
+        }
+      } catch (e, s) {
+        LoggingService.logError('Failed to get profile from SharedPreferences', e, s);
       }
-    } catch (e) {
-      // ignore firestore error
+    }
+    
+    // If there is a dirty profile, try to sync it.
+    if (prefs.getBool('$_dirtyProfilePrefix$uid') == true && profile != null) {
+      await saveProfile(uid, profile);
     }
 
-    // Fallback to SharedPreferences
-    final Map<String, dynamic> result = {};
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      result['age'] = prefs.getInt('user_age_$uid') ?? 0;
-      result['height'] = prefs.getDouble('user_height_$uid') ?? 0.0;
-      result['weight'] = prefs.getDouble('user_weight_$uid') ?? 0.0;
-      result['gender'] = prefs.getString('user_gender_$uid') ?? '';
-    } catch (e) {
-      // ignore
-    }
-
-    return result;
+    return profile;
   }
 
   // Save a chosen program for the user (Firestore first, SharedPreferences fallback)
   static Future<void> saveProgram(String uid, String program) async {
+    bool firestoreOk = false;
     try {
-      await fs.FirebaseFirestore.instance.collection('users').doc(uid).set({'program': program}, fs.SetOptions(merge: true));
-    } catch (e) {
-      // ignore
+      await fs.FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .set({'program': program}, fs.SetOptions(merge: true))
+          .timeout(Duration(seconds: 2));
+      firestoreOk = true;
+    } catch (e, s) {
+      LoggingService.logError('Failed to save program to Firestore', e, s);
     }
 
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('user_program_$uid', program);
-    } catch (e) {
-      // ignore
+    } catch (e, s) {
+      LoggingService.logError('Failed to save program to SharedPreferences', e, s);
+    }
+    if (!firestoreOk) {
+      LoggingService.logInfo('Firestore save failed, saved locally.');
     }
   }
 
@@ -108,12 +136,16 @@ class UserService {
         final data = doc.data();
         if (data != null && data['program'] != null) return data['program'] as String;
       }
-    } catch (e) {}
+    } catch (e, s) {
+      LoggingService.logError('Failed to get program from Firestore', e, s);
+    }
 
     try {
       final prefs = await SharedPreferences.getInstance();
       return prefs.getString('user_program_$uid');
-    } catch (e) {}
+    } catch (e, s) {
+      LoggingService.logError('Failed to get program from SharedPreferences', e, s);
+    }
     return null;
   }
 }
