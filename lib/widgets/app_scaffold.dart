@@ -16,9 +16,12 @@ class AppScaffold extends StatelessWidget {
         Navigator.pushReplacementNamed(context, '/home');
         break;
       case 1:
-        Navigator.pushReplacementNamed(context, '/profile');
+        Navigator.pushReplacementNamed(context, '/my-programs');
         break;
       case 2:
+        Navigator.pushReplacementNamed(context, '/profile');
+        break;
+      case 3:
         Navigator.pushReplacementNamed(context, '/settings');
         break;
     }
@@ -30,6 +33,8 @@ class AppScaffold extends StatelessWidget {
     final labelHome = appLoc.homeTitle;
     final labelProfile = appLoc.profileTitle;
     final labelSettings = appLoc.settingsTitle;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: title != null
@@ -40,7 +45,11 @@ class AppScaffold extends StatelessWidget {
       body: SafeArea(child: body),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(colors: [AppTheme.primaryColor, AppTheme.secondaryColor]),
+          gradient: LinearGradient(
+            colors: isDark
+                ? [AppTheme.darkBottomBarTop, AppTheme.darkBottomBarBottom]
+                : [AppTheme.primaryColor, AppTheme.secondaryColor],
+          ),
           boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, -2))],
           borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
         ),
@@ -49,8 +58,10 @@ class AppScaffold extends StatelessWidget {
           child: BottomNavigationBar(
             currentIndex: currentIndex,
             onTap: (i) => _onTap(context, i),
+            type: BottomNavigationBarType.fixed,
             items: [
               BottomNavigationBarItem(icon: Icon(Icons.home), label: labelHome),
+              BottomNavigationBarItem(icon: Icon(Icons.fitness_center), label: 'Programlarım'),
               BottomNavigationBarItem(icon: Icon(Icons.person), label:labelProfile),
               BottomNavigationBarItem(icon: Icon(Icons.settings), label: labelSettings),
             ],

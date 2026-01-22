@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 class AppTheme {
   static final Color primaryColor = Color(0xFF2E7D32);
   static final Color secondaryColor = Color(0xFF66BB6A);
+  static final Color darkBgTop = Color(0xFF0F1F12);
+  static final Color darkBgBottom = Color(0xFF0B1410);
   static final Color textColor = Colors.white;
   static final Color textColorMuted = Colors.white70;
 
@@ -62,6 +64,7 @@ class AppTheme {
       primary: primaryColor,
       secondary: secondaryColor,
     ),
+    cardColor: Color(0xFF121A14),
   );
 
   static final BoxDecoration gradientDecoration = BoxDecoration(
@@ -71,4 +74,16 @@ class AppTheme {
       colors: [primaryColor, secondaryColor],
     ),
   );
+
+  static final BoxDecoration darkGradientDecoration = BoxDecoration(
+    gradient: LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [darkBgTop, darkBgBottom],
+    ),
+  );
+
+  // Koyu mod için bottom bar gradient (arka plandan daha koyu yeşil)
+  static final Color darkBottomBarTop = Color(0xFF0A1510);
+  static final Color darkBottomBarBottom = Color(0xFF060C08);
 }

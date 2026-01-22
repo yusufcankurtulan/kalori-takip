@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../services/user_service.dart';
 import '../services/auth_service.dart';
+import '../services/ai_service.dart';
+import 'diet_programs_selection_screen.dart';
 
 class ProgramQuestionScreen extends StatefulWidget {
   final String programKey;
@@ -54,12 +56,63 @@ class _ProgramQuestionScreenState extends State<ProgramQuestionScreen> {
     if (!_formKey.currentState!.validate()) return;
     _formKey.currentState!.save();
     setState(() => _saving = true);
+    
     final uid = AuthService.currentUser?.uid;
-    if (uid == null) return;
-    // Firestore'a kaydet
-    await UserService.saveProgramAnswers(uid, widget.programKey, _answers);
-    setState(() => _saving = false);
-    Navigator.pop(context); // Şimdilik ana ekrana dön
+    if (uid == null) {
+      setState(() => _saving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Kullanıcı oturumu bulunamadı!')),
+      );
+      return;
+    }
+
+    try {
+      // Firestore'a kaydet
+      await UserService.saveProgramAnswers(uid, widget.programKey, _answers);
+      
+      // Kullanıcı profilini al
+      final userProfile = await UserService.getProfile(uid);
+      Map<String, dynamic>? profileData;
+      if (userProfile != null) {
+        profileData = userProfile.toJson();
+      }
+
+      // AI'dan diyet programlarını al
+      final programsResponse = await AIService.generateDietPrograms(
+        programKey: widget.programKey,
+        answers: _answers,
+        userProfile: profileData,
+      );
+
+      setState(() => _saving = false);
+
+      if (programsResponse == null || programsResponse['programs'] == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Diyet programları oluşturulamadı. Lütfen tekrar deneyin.')),
+        );
+        return;
+      }
+
+      // Diyet programları seçim ekranına git
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => DietProgramsSelectionScreen(
+              programKey: widget.programKey,
+              programs: List<Map<String, dynamic>>.from(programsResponse['programs']),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() => _saving = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Hata oluştu: ${e.toString()}')),
+        );
+      }
+    }
   }
 
   @override

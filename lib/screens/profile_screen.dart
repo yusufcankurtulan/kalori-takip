@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/user_profile.dart';
-import '../services/auth_service.dart';
 import '../widgets/app_scaffold.dart';
 import '../services/user_service.dart';
 import '../l10n/app_localizations.dart';
 import 'user_info_screen.dart';
-import 'login_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   @override
@@ -36,7 +35,6 @@ class ProfileScreen extends StatelessWidget {
                 child: ListTile(
                   leading: Icon(Icons.person),
                   title: Text(name),
-                  subtitle: Text(userProfile?.goal ?? loc.profileNotSet),
                   trailing: TextButton(
                     onPressed: () {
                       Navigator.push(context, MaterialPageRoute(builder: (_) => UserInfoScreen()));
@@ -70,19 +68,6 @@ class ProfileScreen extends StatelessWidget {
                   subtitle: Text((weight == '0.0' || weight == '0') ? loc.profileNotSet : weight),
                 ),
               ),
-              SizedBox(height: 12),
-              ElevatedButton(
-                onPressed: () async {
-                  await AuthService.signOut();
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (_) => LoginScreen()),
-                    (r) => false,
-                  );
-                },
-                child: Text(loc.logout),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-              )
             ],
           ),
         );
@@ -91,13 +76,14 @@ class ProfileScreen extends StatelessWidget {
 
     return AppScaffold(
       title: loc.profileTitle,
-      currentIndex: 1,
+      currentIndex: 2,
       body: body,
     );
   }
 
   Future<UserProfile?> _loadProfile() async {
-    final uid = AuthService.currentUser?.uid;
+    // `UserService.getProfile` caches and reads from Firestore when available.
+    final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return null;
     return await UserService.getProfile(uid);
   }

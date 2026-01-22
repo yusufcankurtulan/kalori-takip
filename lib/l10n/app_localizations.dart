@@ -94,6 +94,8 @@ class AppLocalizations {
   String get menuCameraDesc => _t('menu_camera_desc');
   String get menuRecordsTitle => _t('menu_records_title');
   String get menuRecordsDesc => _t('menu_records_desc');
+  String get programsTitle => _t('programs_title');
+  String get programsDesc => _t('programs_desc');
   String get homeSubtitle => _t('home_subtitle');
     String get profileHeaderTitle => _t('profile_header_title');
     String get profileHeaderSubtitle => _t('profile_header_subtitle');

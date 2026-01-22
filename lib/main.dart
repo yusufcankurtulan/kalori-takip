@@ -7,6 +7,7 @@ import 'screens/user_info_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/camera_screen.dart';
+import 'screens/my_programs_screen.dart';
 import 'services/firebase_service.dart';
 import 'services/user_service.dart';
 import 'services/theme_service.dart';
@@ -50,6 +51,7 @@ class MyApp extends StatelessWidget {
       locale: localeSvc.locale,
       routes: {
         '/home': (_) => HomeScreen(),
+        '/my-programs': (_) => MyProgramsScreen(),
         '/profile': (_) => ProfileScreen(),
         '/settings': (_) => SettingsScreen(),
         '/login': (_) => LoginScreen(),
@@ -57,8 +59,9 @@ class MyApp extends StatelessWidget {
         '/camera': (_) => CameraScreen(),
       },
       builder: (context, child) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         return Container(
-          decoration: AppTheme.gradientDecoration,
+          decoration: isDark ? AppTheme.darkGradientDecoration : AppTheme.gradientDecoration,
           child: child,
         );
       },

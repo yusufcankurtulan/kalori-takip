@@ -69,7 +69,7 @@ class SettingsScreen extends StatelessWidget {
 
     return AppScaffold(
       title: loc.settingsTitle,
-      currentIndex: 2,
+      currentIndex: 3,
       body: body,
     );
   }

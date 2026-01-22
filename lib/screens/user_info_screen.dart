@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/user_profile.dart';
 import '../services/user_service.dart';
@@ -15,17 +16,22 @@ class UserInfoScreen extends StatefulWidget {
 
 class _UserInfoScreenState extends State<UserInfoScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _firstNameCtrl = TextEditingController();
+  final _lastNameCtrl = TextEditingController();
   final _heightCtrl = TextEditingController();
   final _weightCtrl = TextEditingController();
-  final _ageCtrl = TextEditingController();
+  final _birthDateCtrl = TextEditingController();
+  DateTime? _selectedBirthDate;
   bool _loading = false;
   String? _error;
 
   @override
   void dispose() {
+    _firstNameCtrl.dispose();
+    _lastNameCtrl.dispose();
     _heightCtrl.dispose();
     _weightCtrl.dispose();
-    _ageCtrl.dispose();
+    _birthDateCtrl.dispose();
     super.dispose();
   }
 
@@ -43,17 +49,30 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
     setState(() {
       _heightCtrl.text = profile.height.toString();
       _weightCtrl.text = profile.weight.toString();
-      _ageCtrl.text = profile.age.toString();
+      if (profile.birthDate != null) {
+        _birthDateCtrl.text = profile.birthDate!;
+      }
+      if (profile.firstName != null) {
+        _firstNameCtrl.text = profile.firstName!;
+      }
+      if (profile.lastName != null) {
+        _lastNameCtrl.text = profile.lastName!;
+      }
     });
   }
 
   Future<void> _submit() async {
     // Validate inputs
+    final firstName = _firstNameCtrl.text.trim();
+    final lastName = _lastNameCtrl.text.trim();
     final heightVal = double.tryParse(_heightCtrl.text.replaceAll(',', '.'));
     final weightVal = double.tryParse(_weightCtrl.text.replaceAll(',', '.'));
-    final ageVal = int.tryParse(_ageCtrl.text);
 
     final loc = AppLocalizations.of(context);
+    if (firstName.isEmpty || lastName.isEmpty) {
+      setState(() => _error = 'Lütfen ad ve soyad giriniz.');
+      return;
+    }
     if (heightVal == null || heightVal <= 0) {
       setState(() => _error = loc.enterValidHeight);
       return;
@@ -62,7 +81,8 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
       setState(() => _error = loc.enterValidWeight);
       return;
     }
-    if (ageVal == null || ageVal <= 0) {
+    if (_selectedBirthDate == null) {
+      // Mevcut çeviriyi kullanmak için aynı hata anahtarını kullanıyoruz.
       setState(() => _error = loc.enterValidAge);
       return;
     }
@@ -81,14 +101,34 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
       return;
     }
 
+    // Doğum tarihinden yaşı hesapla
+    final now = DateTime.now();
+    int ageVal = now.year - _selectedBirthDate!.year;
+    final thisYearsBirthday =
+        DateTime(now.year, _selectedBirthDate!.month, _selectedBirthDate!.day);
+    if (thisYearsBirthday.isAfter(now)) {
+      ageVal--;
+    }
+    final birthDateStr =
+        '${_selectedBirthDate!.day.toString().padLeft(2, '0')}.'
+        '${_selectedBirthDate!.month.toString().padLeft(2, '0')}.'
+        '${_selectedBirthDate!.year}';
+
+    final fullName = '$firstName $lastName'.trim();
+
     final profile = UserProfile(
       id: user.uid,
-      name: user.displayName ?? user.email ?? 'No Name',
+      name: fullName.isEmpty
+          ? (user.displayName ?? user.email ?? 'No Name')
+          : fullName,
+      firstName: firstName,
+      lastName: lastName,
       age: ageVal,
       height: heightVal,
       weight: weightVal,
       goal: 'maintain', // Default value
       activityLevel: 'sedentary', // Default value
+      birthDate: birthDateStr,
     );
 
     try {
@@ -138,39 +178,161 @@ class _UserInfoScreenState extends State<UserInfoScreen> {
                   ),
                   SizedBox(height: 32),
 
-                  // Height Field
+                  // First Name Field
+                  TextField(
+                    controller: _firstNameCtrl,
+                    keyboardType: TextInputType.name,
+                    style: TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      filled: false,
+                      labelText: 'Ad',
+                      labelStyle: TextStyle(color: Colors.white70),
+                      prefixIcon: Icon(Icons.person, color: Colors.white70),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.white30),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.white30),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.white),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 16),
+
+                  // Last Name Field
+                  TextField(
+                    controller: _lastNameCtrl,
+                    keyboardType: TextInputType.name,
+                    style: TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      filled: false,
+                      labelText: 'Soyad',
+                      labelStyle: TextStyle(color: Colors.white70),
+                      prefixIcon: Icon(Icons.person_outline, color: Colors.white70),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.white30),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.white30),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.white),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 16),
+
+                  // Height Field (cm)
                   TextField(
                     controller: _heightCtrl,
-                    keyboardType: TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    style: TextStyle(color: Colors.white),
                     decoration: InputDecoration(
+                      filled: false,
                       labelText: AppLocalizations.of(context).height,
+                      labelStyle: TextStyle(color: Colors.white70),
                       hintText: '170',
-                      prefixIcon: Icon(Icons.height),
+                      prefixIcon: Icon(Icons.height, color: Colors.white70),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.white30),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.white30),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.white),
+                      ),
                     ),
                   ),
                   SizedBox(height: 16),
 
-                  // Weight Field
+                  // Weight Field (kg)
                   TextField(
                     controller: _weightCtrl,
-                    keyboardType: TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    style: TextStyle(color: Colors.white),
                     decoration: InputDecoration(
+                      filled: false,
                       labelText: AppLocalizations.of(context).weight,
+                      labelStyle: TextStyle(color: Colors.white70),
                       hintText: '70',
-                      prefixIcon: Icon(Icons.scale),
+                      prefixIcon: Icon(Icons.scale, color: Colors.white70),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.white30),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.white30),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.white),
+                      ),
                     ),
                   ),
                   SizedBox(height: 16),
 
-                  // Age Field
+                  // Birth Date Field
                   TextField(
-                    controller: _ageCtrl,
-                    keyboardType: TextInputType.number,
+                    controller: _birthDateCtrl,
+                    readOnly: true,
+                    style: TextStyle(color: Colors.white),
                     decoration: InputDecoration(
-                      labelText: AppLocalizations.of(context).age,
-                      hintText: '25',
-                      prefixIcon: Icon(Icons.cake),
+                      filled: false,
+                      labelText: 'Doğum Tarihi',
+                      labelStyle: TextStyle(color: Colors.white70),
+                      hintText: 'GG.AA.YYYY',
+                      prefixIcon: Icon(Icons.cake, color: Colors.white70),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.white30),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.white30),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.white),
+                      ),
                     ),
+                    onTap: () async {
+                      FocusScope.of(context).unfocus();
+                      final now = DateTime.now();
+                      final initialDate = _selectedBirthDate ??
+                          DateTime(now.year - 25, now.month, now.day);
+                      final firstDate = DateTime(now.year - 100);
+                      final lastDate = now;
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: initialDate,
+                        firstDate: firstDate,
+                        lastDate: lastDate,
+                      );
+                      if (picked != null) {
+                        setState(() {
+                          _selectedBirthDate = picked;
+                          _birthDateCtrl.text =
+                              '${picked.day.toString().padLeft(2, '0')}.'
+                              '${picked.month.toString().padLeft(2, '0')}.'
+                              '${picked.year}';
+                        });
+                      }
+                    },
                   ),
                   SizedBox(height: 24),
 

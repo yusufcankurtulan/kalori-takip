@@ -148,4 +148,41 @@ class UserService {
     }
     return null;
   }
+
+  // Save selected diet program
+  static Future<void> saveSelectedDietProgram(
+    String uid,
+    String programKey,
+    Map<String, dynamic> dietProgram,
+  ) async {
+    try {
+      await fs.FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .set({
+            'program': programKey,
+            'selectedDietProgram': dietProgram,
+            'dietProgramUpdatedAt': fs.FieldValue.serverTimestamp(),
+          }, fs.SetOptions(merge: true));
+    } catch (e, s) {
+      LoggingService.logError('Failed to save selected diet program', e, s);
+      rethrow;
+    }
+  }
+
+  // Get selected diet program
+  static Future<Map<String, dynamic>?> getSelectedDietProgram(String uid) async {
+    try {
+      final doc = await fs.FirebaseFirestore.instance.collection('users').doc(uid).get();
+      if (doc.exists) {
+        final data = doc.data();
+        if (data != null && data['selectedDietProgram'] != null) {
+          return Map<String, dynamic>.from(data['selectedDietProgram'] as Map);
+        }
+      }
+    } catch (e, s) {
+      LoggingService.logError('Failed to get selected diet program', e, s);
+    }
+    return null;
+  }
 }

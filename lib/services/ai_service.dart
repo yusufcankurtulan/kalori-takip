@@ -11,6 +11,7 @@ class AIService {
   static const _baseURL = 'http://localhost:3000';
   static const _imageCalorieEndpoint = '$_baseURL/estimate-calories';
   static const _planEndpoint = '$_baseURL/generate-plan';
+  static const _dietProgramsEndpoint = '$_baseURL/generate-diet-programs';
 
   // Upload image and request calorie estimation
   static Future<String?> estimateCalories(File imageFile) async {
@@ -50,6 +51,37 @@ class AIService {
       }
     } catch (e, s) {
       LoggingService.logError('Failed to generate program', e, s);
+      return null;
+    }
+  }
+
+  // Generate multiple diet program alternatives
+  static Future<Map<String, dynamic>?> generateDietPrograms({
+    required String programKey,
+    required Map<String, dynamic> answers,
+    Map<String, dynamic>? userProfile,
+  }) async {
+    try {
+      final uri = Uri.parse(_dietProgramsEndpoint);
+      final requestBody = {
+        'programKey': programKey,
+        'answers': answers,
+        'userProfile': userProfile,
+      };
+      final resp = await http.post(
+        uri,
+        body: json.encode(requestBody),
+        headers: {'Content-Type': 'application/json'},
+      );
+      if (resp.statusCode == 200) {
+        final data = json.decode(resp.body) as Map<String, dynamic>;
+        return data;
+      } else {
+        LoggingService.logError('Failed to generate diet programs. Status code: ${resp.statusCode}', resp.body);
+        return null;
+      }
+    } catch (e, s) {
+      LoggingService.logError('Failed to generate diet programs', e, s);
       return null;
     }
   }

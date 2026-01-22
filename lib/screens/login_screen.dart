@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import '../services/user_service.dart';
+import 'home_screen.dart';
 import 'register_screen.dart';
+import 'user_info_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -21,6 +24,18 @@ class _LoginScreenState extends State<LoginScreen> {
     });
     try {
       await AuthService.signIn(_emailCtrl.text.trim(), _passCtrl.text.trim());
+      final user = AuthService.currentUser;
+      if (user == null) {
+        throw Exception('Login succeeded but user is null.');
+      }
+
+      final completed = await UserService.isProfileComplete(user.uid);
+      if (!mounted) return;
+
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => completed ? HomeScreen() : UserInfoScreen()),
+        (route) => false,
+      );
     } catch (e) {
       setState(() {
         _error = e.toString();
@@ -70,6 +85,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     keyboardType: TextInputType.emailAddress,
                     style: TextStyle(color: Colors.white),
                     decoration: InputDecoration(
+                      filled: false,
                       labelText: 'Email',
                       labelStyle: TextStyle(color: Colors.white70),
                       prefixIcon: Icon(Icons.email, color: Colors.white70),
@@ -93,6 +109,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     obscureText: _obscurePassword,
                     style: TextStyle(color: Colors.white),
                     decoration: InputDecoration(
+                      filled: false,
                       labelText: 'Şifre',
                       labelStyle: TextStyle(color: Colors.white70),
                       prefixIcon: Icon(Icons.lock, color: Colors.white70),

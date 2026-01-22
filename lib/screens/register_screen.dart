@@ -96,6 +96,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     keyboardType: TextInputType.emailAddress,
                     style: TextStyle(color: Colors.white),
                     decoration: InputDecoration(
+                      filled: false,
                       labelText: 'Email',
                       labelStyle: TextStyle(color: Colors.white70),
                       prefixIcon: Icon(Icons.email, color: Colors.white70),
@@ -119,6 +120,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     obscureText: _obscurePassword,
                     style: TextStyle(color: Colors.white),
                     decoration: InputDecoration(
+                      filled: false,
                       labelText: 'Şifre (min 6)',
                       labelStyle: TextStyle(color: Colors.white70),
                       prefixIcon: Icon(Icons.lock, color: Colors.white70),
@@ -149,6 +151,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     obscureText: _obscureConfirm,
                     style: TextStyle(color: Colors.white),
                     decoration: InputDecoration(
+                      filled: false,
                       labelText: 'Şifreyi Onayla',
                       labelStyle: TextStyle(color: Colors.white70),
                       prefixIcon: Icon(Icons.lock, color: Colors.white70),
