@@ -35,7 +35,7 @@ class _MyProgramsScreenState extends State<MyProgramsScreen> {
         _selectedProgram = await UserService.getSelectedDietProgram(uid);
       }
     } catch (e) {
-      print('Error loading program: $e');
+      debugPrint('Error loading program: $e');
     }
 
     if (mounted) {
@@ -49,42 +49,51 @@ class _MyProgramsScreenState extends State<MyProgramsScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
+    /// 🔹 FITNESS ICON & TEXT ORTAK RENGİ
+    final baseTextColor = isDark ? Colors.white70 : Colors.grey[800]!;
+
     return AppScaffold(
-      title: 'Programlarım',
+      title: loc.myProgramsTitle,
       currentIndex: 1,
       body: _loading
-          ? Center(child: CircularProgressIndicator())
-          : _selectedProgram == null
-              ? _buildEmptyState()
-              : _buildProgramDetails(),
+          ? const Center(child: CircularProgressIndicator())
+          : DefaultTextStyle(
+              style: TextStyle(
+                color: baseTextColor,
+                fontSize: 14,
+              ),
+              child: _selectedProgram == null
+                  ? _buildEmptyState(baseTextColor)
+                  : _buildProgramDetails(baseTextColor),
+            ),
     );
   }
 
-  Widget _buildEmptyState() {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final titleColor = isDark ? Colors.white : Colors.grey[700];
-    final subtitleColor = isDark ? Colors.white70 : Colors.grey[600];
-    final iconColor = isDark ? Colors.white38 : Colors.grey[400];
+  Widget _buildEmptyState(Color baseTextColor) {
+    final loc = AppLocalizations.of(context);
+
     return Center(
       child: Padding(
-        padding: EdgeInsets.all(32),
+        padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.fitness_center, size: 64, color: iconColor),
-            SizedBox(height: 16),
-            Text(
-              'Henüz bir program seçmediniz',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: titleColor),
+            Icon(
+              Icons.fitness_center,
+              size: 64,
+              color: baseTextColor.withOpacity(0.5),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 16),
             Text(
-              'Size özel bir diyet programı oluşturmak için program seçin',
+              loc.noProgramTitle,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              loc.noProgramDescription,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: subtitleColor),
             ),
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
             ElevatedButton(
               onPressed: () {
                 Navigator.push(
@@ -93,11 +102,10 @@ class _MyProgramsScreenState extends State<MyProgramsScreen> {
                 ).then((_) => _loadProgram());
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFF2E7D32),
+                backgroundColor: const Color(0xFF121A14),
                 foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
               ),
-              child: Text('Program Seç'),
+              child: Text(loc.selectProgram),
             ),
           ],
         ),
@@ -105,63 +113,79 @@ class _MyProgramsScreenState extends State<MyProgramsScreen> {
     );
   }
 
-  Widget _buildProgramDetails() {
+  Widget _buildProgramDetails(Color baseTextColor) {
+    final loc = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+
     final program = _selectedProgram!;
-    final programName = program['name'] ?? 'Diyet Programı';
+    final programName = program['name'] ?? loc.defaultDietProgram;
     final dailyCalories = program['dailyCalories'] ?? 0;
     final description = program['description'] ?? '';
     final dailyMeals = program['dailyMeals'] as Map<String, dynamic>?;
     final weeklyPlan = program['weeklyPlan'] ?? '';
-    final nutritionTargets = program['nutritionTargets'] as Map<String, dynamic>?;
+    final nutritionTargets =
+        program['nutritionTargets'] as Map<String, dynamic>?;
     final tips = program['tips'] as List<dynamic>?;
     final notes = program['notes'] ?? '';
 
     return SingleChildScrollView(
-      padding: EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Program Header
+          /// HEADER
           Card(
             elevation: 4,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
-                gradient: LinearGradient(
+                gradient: const LinearGradient(
                   colors: [Color(0xFF2E7D32), Color(0xFF66BB6A)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
               ),
-              padding: EdgeInsets.all(24),
+              padding: const EdgeInsets.all(24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     programName,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
                   ),
-                  SizedBox(height: 8),
-                  if (description.isNotEmpty)
+                  if (description.isNotEmpty) ...[
+                    const SizedBox(height: 8),
                     Text(
                       description,
-                      style: TextStyle(fontSize: 14, color: Colors.white70),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.white70,
+                      ),
                     ),
-                  SizedBox(height: 16),
+                  ],
+                  const SizedBox(height: 16),
                   Row(
                     children: [
-                      Icon(Icons.local_fire_department, color: Colors.white, size: 20),
-                      SizedBox(width: 4),
+                      const Icon(
+                        Icons.local_fire_department,
+                        color: Colors.white,
+                      ),
+                      const SizedBox(width: 4),
                       Text(
-                        'Günlük Kalori: $dailyCalories kcal',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                        '${loc.dailyCalories}: $dailyCalories kcal',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
                     ],
                   ),
@@ -169,230 +193,252 @@ class _MyProgramsScreenState extends State<MyProgramsScreen> {
               ),
             ),
           ),
-          SizedBox(height: 16),
 
-          // Nutrition Targets
+          const SizedBox(height: 16),
+
+          /// NUTRITION TARGETS
           if (nutritionTargets != null) ...[
             Card(
               child: Padding(
-                padding: EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Besin Değerleri Hedefi',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      loc.nutritionTargets,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                    SizedBox(height: 12),
+                    const SizedBox(height: 12),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        _buildNutritionBox('Protein', '${nutritionTargets['protein'] ?? 0}g', Colors.blue),
-                        _buildNutritionBox('Karbonhidrat', '${nutritionTargets['carbs'] ?? 0}g', Colors.orange),
-                        _buildNutritionBox('Yağ', '${nutritionTargets['fat'] ?? 0}g', Colors.red),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            SizedBox(height: 16),
-          ],
-
-          // Daily Meals
-          if (dailyMeals != null) ...[
-            Card(
-              child: Padding(
-                padding: EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Günlük Öğün Planı',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: 12),
-                    if (dailyMeals['breakfast'] != null)
-                      _buildMealItem('Sabah', dailyMeals['breakfast']),
-                    if (dailyMeals['lunch'] != null)
-                      _buildMealItem('Öğle', dailyMeals['lunch']),
-                    if (dailyMeals['dinner'] != null)
-                      _buildMealItem('Akşam', dailyMeals['dinner']),
-                    if (dailyMeals['snacks'] != null)
-                      _buildMealItem('Ara Öğün', dailyMeals['snacks']),
-                  ],
-                ),
-              ),
-            ),
-            SizedBox(height: 16),
-          ],
-
-          // Weekly Plan
-          if (weeklyPlan.isNotEmpty) ...[
-            Card(
-              child: Padding(
-                padding: EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Haftalık Plan',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: 12),
-                    Text(
-                      weeklyPlan,
-                      style: TextStyle(fontSize: 14, height: 1.5),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            SizedBox(height: 16),
-          ],
-
-          // Tips
-          if (tips != null && tips.isNotEmpty) ...[
-            Card(
-              child: Padding(
-                padding: EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'İpuçları ve Öneriler',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: 12),
-                    ...tips.map((tip) => Padding(
-                          padding: EdgeInsets.only(bottom: 8),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Icon(Icons.check_circle, color: Color(0xFF2E7D32), size: 20),
-                              SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  tip.toString(),
-                                  style: TextStyle(fontSize: 14, height: 1.5),
-                                ),
-                              ),
-                            ],
-                          ),
-                        )),
-                  ],
-                ),
-              ),
-            ),
-            SizedBox(height: 16),
-          ],
-
-          // Notes
-          if (notes.isNotEmpty) ...[
-            Card(
-              color: isDark ? Color(0xFF2A1D12) : Color(0xFFFFF3E0),
-              child: Padding(
-                padding: EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.info_outline, color: Colors.orange),
-                        SizedBox(width: 8),
-                        Text(
-                          'Dikkat',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.orange[200] : Colors.orange[900],
-                          ),
+                        _buildNutritionBox(
+                          loc.protein,
+                          '${nutritionTargets['protein'] ?? 0}g',
+                          Colors.blue,
+                        ),
+                        _buildNutritionBox(
+                          loc.carbohydrate,
+                          '${nutritionTargets['carbs'] ?? 0}g',
+                          Colors.orange,
+                        ),
+                        _buildNutritionBox(
+                          loc.fat,
+                          '${nutritionTargets['fat'] ?? 0}g',
+                          Colors.red,
                         ),
                       ],
                     ),
-                    SizedBox(height: 8),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+
+          /// DAILY MEALS
+          if (dailyMeals != null) ...[
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      notes,
-                      style: TextStyle(
-                        fontSize: 14,
-                        height: 1.5,
-                        color: isDark ? Colors.orange[100] : Colors.orange[900],
+                      loc.dailyMealPlan,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    if (dailyMeals['breakfast'] != null)
+                      _buildMealItem(
+                        loc.breakfast,
+                        dailyMeals['breakfast'],
+                      ),
+                    if (dailyMeals['lunch'] != null)
+                      _buildMealItem(loc.lunch, dailyMeals['lunch']),
+                    if (dailyMeals['dinner'] != null)
+                      _buildMealItem(loc.dinner, dailyMeals['dinner']),
+                    if (dailyMeals['snacks'] != null)
+                      _buildMealItem(loc.snack, dailyMeals['snacks']),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+
+          /// WEEKLY PLAN
+          if (weeklyPlan.isNotEmpty) ...[
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      loc.weeklyPlan,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(weeklyPlan),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+
+          /// TIPS
+          if (tips != null && tips.isNotEmpty) ...[
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      loc.tipsAndSuggestions,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ...tips.map(
+                      (tip) => Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.check_circle,
+                              color: Color(0xFF2E7D32),
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(child: Text(tip.toString())),
+                          ],
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
             ),
+            const SizedBox(height: 16),
           ],
 
-          SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => ProgramsScreen()),
-              ).then((_) => _loadProgram());
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Color(0xFF2E7D32),
-              foregroundColor: Colors.white,
-              padding: EdgeInsets.symmetric(vertical: 16),
-              minimumSize: Size(double.infinity, 50),
+          /// NOTES
+          if (notes.isNotEmpty) ...[
+            Card(
+              color:
+                  isDark ? const Color(0xFF2A1D12) : const Color(0xFFFFF3E0),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.info_outline,
+                          color: Colors.orange,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          loc.warning,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(notes),
+                  ],
+                ),
+              ),
             ),
-            child: Text('Yeni Program Seç'),
-          ),
+          ],
+
+          const SizedBox(height: 24),
+
+          ElevatedButton(
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => ProgramsScreen()),
+    ).then((_) => _loadProgram());
+  },
+  style: ElevatedButton.styleFrom(
+    backgroundColor: const Color(0xFF121A14),
+    foregroundColor: Colors.white,
+    minimumSize: const Size(double.infinity, 56), // 👈 büyütüldü
+    padding: const EdgeInsets.symmetric(vertical: 14), // 👈 daha dolgun
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(14), // 👈 daha modern
+    ),
+  ),
+  child: Text(
+    loc.selectProgram,
+    style: const TextStyle(
+      fontSize: 16, // 👈 text biraz büyüdü
+      fontWeight: FontWeight.w600,
+    ),
+  ),
+),
+
         ],
       ),
     );
   }
 
   Widget _buildNutritionBox(String label, String value, Color color) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final labelColor = isDark ? Colors.white70 : Colors.grey[700];
     return Column(
       children: [
         Container(
-          padding: EdgeInsets.all(12),
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: color.withOpacity(0.1),
             shape: BoxShape.circle,
           ),
           child: Text(
             value,
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color),
+            style: TextStyle(fontWeight: FontWeight.bold, color: color),
           ),
         ),
-        SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(fontSize: 12, color: labelColor),
-        ),
+        const SizedBox(height: 4),
+        Text(label, style: const TextStyle(fontSize: 12)),
       ],
     );
   }
 
   Widget _buildMealItem(String mealName, String mealContent) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final mealTitleColor = isDark ? Colors.white : Color(0xFF2E7D32);
     return Padding(
-      padding: EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             mealName,
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: mealTitleColor),
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF2E7D32),
+            ),
           ),
-          SizedBox(height: 4),
-          Text(
-            mealContent,
-            style: TextStyle(fontSize: 14, height: 1.5),
-          ),
+          const SizedBox(height: 4),
+          Text(mealContent),
         ],
       ),
     );
   }
 }
-

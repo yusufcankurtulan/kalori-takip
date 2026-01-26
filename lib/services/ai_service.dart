@@ -8,7 +8,8 @@ class AIService {
   // In production, replace with your deployed Cloud Function URLs.
   // Make sure to set the environment variables in functions/index.js:
   // NUTRITIONIX_APP_ID, NUTRITIONIX_APP_KEY, OPENAI_API_KEY
-  static const _baseURL = 'http://localhost:3000';
+  // For Android emulator, use 10.0.2.2 to reach host machine
+  static const _baseURL = 'http://10.0.2.2:3000';
   static const _imageCalorieEndpoint = '$_baseURL/estimate-calories';
   static const _planEndpoint = '$_baseURL/generate-plan';
   static const _dietProgramsEndpoint = '$_baseURL/generate-diet-programs';

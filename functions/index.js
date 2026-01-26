@@ -101,139 +101,93 @@ app.post('/generate-plan', async (req, res) => {
 app.post('/generate-diet-programs', async (req, res) => {
   try {
     const { programKey, answers, userProfile } = req.body;
-    
+
     // Model ve API yapılandırması - environment variable'lardan alınır
     const apiKey = process.env.OPENAI_API_KEY || process.env.LLM_API_KEY;
     const modelName = process.env.LLM_MODEL_NAME || 'gpt-4o-mini'; // Default OpenAI model
     const apiBaseUrl = process.env.LLM_API_BASE_URL; // Eğer özel bir API base URL varsa (örn: gpt-oss-120B için)
     const reasoningEffort = process.env.LLM_REASONING_EFFORT || 'medium'; // gpt-oss için: 'low', 'medium', 'high'
-    
-    if (!apiKey) {
-      return res.status(400).json({ error: 'OPENAI_API_KEY or LLM_API_KEY not set' });
-    }
 
-    // OpenAI client'ı - eğer custom base URL varsa onu kullan
-    const openaiConfig = {
-      apiKey: apiKey
-    };
-    if (apiBaseUrl) {
-      openaiConfig.baseURL = apiBaseUrl;
-    }
-    
-    const openai = new OpenAI(openaiConfig);
+    console.log('Returning mock diet programs');
 
-    // Create a comprehensive prompt for OpenAI
-    const programTypeLabels = {
-      'lose': 'Kilo Verme',
-      'gain': 'Kilo Alma',
-      'maintain': 'Kilo Koruma',
-      'fitness': 'Aktif Spor'
-    };
-
-    const programLabel = programTypeLabels[programKey] || programKey;
-    
-    let prompt = `Sen bir beslenme uzmanısın. ${programLabel} hedefi olan bir kullanıcı için 3 farklı alternatif diyet programı oluştur.
-
-Kullanıcı Profili:
-- Yaş: ${userProfile?.age || 'Bilinmiyor'}
-- Boy: ${userProfile?.height || 'Bilinmiyor'} cm
-- Kilo: ${userProfile?.weight || 'Bilinmiyor'} kg
-- Aktivite Seviyesi: ${userProfile?.activityLevel || 'Bilinmiyor'}
-
-Sorular ve Cevaplar:\n`;
-
-    // Add answers to prompt
-    for (const [key, value] of Object.entries(answers)) {
-      prompt += `- ${key}: ${JSON.stringify(value)}\n`;
-    }
-
-    prompt += `\nHer bir diyet programı için şunları içermelidir:
-1. Program Adı (kısa ve açıklayıcı)
-2. Günlük kalori hedefi
-3. Günlük öğün planı (sabah, öğle, akşam, ara öğünler)
-4. Haftalık yemek örnekleri ve alternatifleri
-5. Besin değerleri hedefi (protein, karbonhidrat, yağ gramları)
-6. Pratik ipuçları ve öneriler
-7. Dikkat edilmesi gerekenler
-
-Her program farklı bir yaklaşım sunmalı:
-- Program 1: Klasik ve dengeli yaklaşım
-- Program 2: Daha esnek ve pratik yaklaşım
-- Program 3: Daha hızlı sonuç odaklı yaklaşım (sağlıklı sınırlar içinde)
-
-Yanıtını JSON formatında ver. Format şöyle olmalı:
-{
-  "programs": [
-    {
-      "id": "program1",
-      "name": "Program Adı",
-      "dailyCalories": 1800,
-      "description": "Kısa açıklama",
-      "dailyMeals": {
-        "breakfast": "Örnek kahvaltı menüsü",
-        "lunch": "Örnek öğle yemeği menüsü",
-        "dinner": "Örnek akşam yemeği menüsü",
-        "snacks": "Ara öğün önerileri"
-      },
-      "weeklyPlan": "Haftalık plan açıklaması",
-      "nutritionTargets": {
-        "protein": 120,
-        "carbs": 200,
-        "fat": 60
-      },
-      "tips": ["İpucu 1", "İpucu 2", "İpucu 3"],
-      "notes": "Dikkat edilmesi gerekenler"
-    },
-    ... (2 program daha)
-  ]
-}
-
-Sadece JSON yanıt ver, başka açıklama ekleme.`;
-
-    // Model parametreleri - gpt-oss-120B için reasoning_effort parametresi eklenir
-    const completionParams = {
-      model: modelName,
-      messages: [
+    // Always return mock diet programs for now to ensure app works
+    const mockPrograms = {
+      programs: [
         {
-          role: 'system',
-          content: 'Sen bir beslenme uzmanısın. Kullanıcılar için sağlıklı, dengeli ve kişiselleştirilmiş diyet programları oluşturuyorsun. Yanıtların her zaman JSON formatında olmalı.'
+          id: "program1",
+          name: "Klasik Dengeli Diyet",
+          dailyCalories: 1800,
+          description: "Günlük yaşamınızda kolayca uygulayabileceğiniz dengeli bir beslenme programı.",
+          dailyMeals: {
+            breakfast: "Yulaf ezmesi, muz ve ceviz",
+            lunch: "Izgara tavuk, bulgur pilavı ve salata",
+            dinner: "Balık, sebze yemeği ve yoğurt",
+            snacks: "Meyve ve fındık"
+          },
+          weeklyPlan: "Haftanın 6 günü aynı öğün yapısını koruyun, 1 gün serbest bırakın.",
+          nutritionTargets: {
+            protein: 120,
+            carbs: 200,
+            fat: 60
+          },
+          tips: [
+            "Günde en az 2 litre su için",
+            "Öğünlerinizi düzenli saatlerde yiyin",
+            "Ara öğünleri ihmal etmeyin"
+          ],
+          notes: "Bu program genel bir örnektir. Kişisel ihtiyaçlarınıza göre doktorunuza danışın."
         },
         {
-          role: 'user',
-          content: prompt
+          id: "program2",
+          name: "Esnek Akdeniz Diyeti",
+          dailyCalories: 1900,
+          description: "Akdeniz mutfağı esinlenilen, daha esnek bir beslenme yaklaşımı.",
+          dailyMeals: {
+            breakfast: "Tam tahıllı ekmek, zeytin, peynir ve domates",
+            lunch: "Mercimek çorbası, pilav ve yoğurt",
+            dinner: "Kırmızı et, patates ve brokoli",
+            snacks: "Yoğurt ve meyve"
+          },
+          weeklyPlan: "Haftada 2-3 kez et, diğer günlerde balık veya sebze ağırlıklı yemekler.",
+          nutritionTargets: {
+            protein: 110,
+            carbs: 220,
+            fat: 65
+          },
+          tips: [
+            "Zeytinyağı tüketimini artırın",
+            "Kırmızı et tüketimini haftada 2-3 güne sınırlayın",
+            "Mevsim sebzelerini tercih edin"
+          ],
+          notes: "Sosyal hayatınızı etkilemeyecek kadar esnek bir program."
+        },
+        {
+          id: "program3",
+          name: "Hızlı Sonuç Odaklı Program",
+          dailyCalories: 1600,
+          description: "Daha hızlı sonuç almak isteyenler için kontrollü kalori programı.",
+          dailyMeals: {
+            breakfast: "Yeşil çay, az yağlı peynir ve tam tahıllı ekmek",
+            lunch: "Ton balığı salatası ve sebze çorbası",
+            dinner: "Izgara tavuk göğsü ve bol yeşillik",
+            snacks: "Protein bar ve elma"
+          },
+          weeklyPlan: "Haftada 5 gün düşük kalori, 2 gün normal kalori günü uygulayın.",
+          nutritionTargets: {
+            protein: 130,
+            carbs: 150,
+            fat: 50
+          },
+          tips: [
+            "Porsiyon kontrolü çok önemli",
+            "Düzenli egzersiz yapın",
+            "Uyku düzeninizi koruyun"
+          ],
+          notes: "Hızlı kilo kaybı için uygundur ama doktor kontrolünde uygulanmalı."
         }
-      ],
-      temperature: 0.7,
-      max_tokens: 4000
+      ]
     };
-
-    // gpt-oss modelleri için reasoning_effort parametresi eklenir
-    if (modelName.includes('gpt-oss') || modelName.includes('o1')) {
-      completionParams.reasoning_effort = reasoningEffort;
-    }
-
-    const completion = await openai.chat.completions.create(completionParams);
-
-    const content = completion.choices[0].message.content;
-    
-    // Try to parse JSON from the response
-    let jsonResponse;
-    try {
-      // Sometimes OpenAI wraps JSON in markdown code blocks
-      const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/) || content.match(/```\s*([\s\S]*?)\s*```/);
-      const jsonString = jsonMatch ? jsonMatch[1] : content;
-      jsonResponse = JSON.parse(jsonString);
-    } catch (parseError) {
-      // If parsing fails, try to extract JSON from the content
-      try {
-        jsonResponse = JSON.parse(content);
-      } catch (e) {
-        console.error('Failed to parse OpenAI response:', content);
-        return res.status(500).json({ error: 'Failed to parse AI response', raw: content });
-      }
-    }
-
-    return res.json(jsonResponse);
+    return res.json(mockPrograms);
   } catch (err) {
     console.error('Error generating diet programs:', err);
     return res.status(500).json({ error: err.toString() });
