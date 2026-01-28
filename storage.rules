@@ -1,0 +1,60 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // User profile images
+    match /users/{userId}/profile/{imageName} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId)
+        && request.resource.size < 5 * 1024 * 1024  // Max 5MB
+        && request.resource.contentType.matches('image/.*')
+        && imageName.matches('^[a-zA-Z0-9_-]+\\.(jpg|jpeg|png|gif)$');
+    }
+
+    // Food images for calorie estimation
+    match /food-images/{userId}/{imageName} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId)
+        && request.resource.size < 10 * 1024 * 1024  // Max 10MB
+        && request.resource.contentType.matches('image/.*')
+        && imageName.matches('^[a-zA-Z0-9_-]+\\.(jpg|jpeg|png|gif)$');
+    }
+
+    // Program-related images
+    match /programs/{userId}/{imageName} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId)
+        && request.resource.size < 5 * 1024 * 1024  // Max 5MB
+        && request.resource.contentType.matches('image/.*');
+    }
+
+    // Public assets (if any)
+    match /public/{allPaths=**} {
+      allow read: if true;
+      allow write: if false; // No public write access
+    }
+
+    // Temporary upload folder (restricted)
+    match /temp/{userId}/{imageName} {
+      allow write: if isOwner(userId)
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*')
+        && imageName.matches('^[a-zA-Z0-9_-]+\\.(jpg|jpeg|png|gif)$');
+      allow read: if false; // Temp files not publicly readable
+    }
+
+    // Deny all other access by default
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
+

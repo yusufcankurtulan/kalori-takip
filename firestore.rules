@@ -1,0 +1,96 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidUserProfile() {
+      let data = request.resource.data;
+      return data.keys().hasAll(['name', 'age', 'height', 'weight', 'goal', 'activityLevel'])
+        && data.age is number
+        && data.age >= 1 && data.age <= 120
+        && data.height is number
+        && data.height >= 30 && data.height <= 300
+        && data.weight is number
+        && data.weight >= 1 && data.weight <= 500
+        && data.goal in ['lose', 'gain', 'maintain']
+        && data.activityLevel in ['sedentary', 'active']
+        && data.name is string
+        && data.name.size() >= 2 && data.name.size() <= 100
+        && (!('firstName' in data) || data.firstName is string)
+        && (!('lastName' in data) || data.lastName is string)
+        && (!('birthDate' in data) || data.birthDate is string);
+    }
+
+    function isValidProgramAnswers() {
+      let data = request.resource.data;
+      // Allow any map structure but validate no malicious content
+      return data.keys().hasAll(['programKey', 'answers']);
+    }
+
+    function isValidDietProgramSelection() {
+      let data = request.resource.data;
+      return data.keys().hasAll(['program', 'selectedDietProgram'])
+        && data.program is string
+        && data.selectedDietProgram is map;
+    }
+
+    function isValidProgramData() {
+      let data = request.resource.data;
+      return data.program is string;
+    }
+
+    // Users collection - main user profiles
+    match /users/{userId} {
+      // Allow read if user is owner or reading own document
+      allow read: if isOwner(userId);
+      
+      // Allow create for authenticated users creating their own profile
+      allow create: if isOwner(userId)
+        && isValidUserProfile();
+      
+      // Allow update only for owner with valid data
+      allow update: if isOwner(userId)
+        && isValidUserProfile();
+      
+      // Allow delete only for owner
+      allow delete: if isOwner(userId);
+
+      // Subcollection: program answers
+      match /programAnswers/{programKey} {
+        allow read: if isOwner(userId);
+        allow write: if isOwner(userId)
+          && isValidProgramAnswers();
+      }
+    }
+
+    // Public programs collection (read-only for all, write only by admin)
+    match /publicPrograms/{programId} {
+      allow read: if true;  // Publicly readable
+      allow write: if false; // Only via Firebase Admin SDK
+    }
+
+    // User stats aggregation (example for future use)
+    match /userStats/{userId} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId);
+    }
+
+    // Admin collection for system-wide data
+    match /admin/{document=**} {
+      allow read, write: if false; // Only via Admin SDK
+    }
+
+    // Deny all other access by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+

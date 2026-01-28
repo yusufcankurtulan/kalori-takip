@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
+import '../utils/input_validation.dart';
 
 class RegisterScreen extends StatefulWidget {
   @override
@@ -15,21 +16,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
   String? _error;
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
+  int _passwordStrength = 0;
 
   Future<void> _register() async {
     final email = _emailCtrl.text.trim();
     final password = _passCtrl.text.trim();
     final confirmPass = _confirmPassCtrl.text.trim();
 
-    // Basic client-side validation
+    // Comprehensive validation
     if (email.isEmpty || password.isEmpty || confirmPass.isEmpty) {
       setState(() => _error = 'Tüm alanları doldurunuz.');
       return;
     }
-    if (password.length < 6) {
-      setState(() => _error = 'Şifre en az 6 karakter olmalıdır.');
+
+    // Validate email format
+    final emailError = InputValidation.validateEmail(email);
+    if (emailError != null) {
+      setState(() => _error = emailError);
       return;
     }
+
+    // Validate password with strong requirements
+    final passwordErrors = InputValidation.validatePassword(password);
+    if (passwordErrors.isNotEmpty) {
+      setState(() => _error = passwordErrors.first);
+      return;
+    }
+
+    // Confirm password match
     if (password != confirmPass) {
       setState(() => _error = 'Şifreler eşleşmiyor.');
       return;
@@ -55,6 +69,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  void _updatePasswordStrength(String password) {
+    setState(() {
+      _passwordStrength = InputValidation.calculatePasswordStrength(password);
+    });
+  }
+
+  Color _getStrengthColor() {
+    if (_passwordStrength < 30) return Colors.red;
+    if (_passwordStrength < 50) return Colors.orange;
+    if (_passwordStrength < 70) return Colors.yellow;
+    if (_passwordStrength < 90) return Colors.lightGreen;
+    return Colors.green;
   }
 
   @override
@@ -119,9 +147,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     controller: _passCtrl,
                     obscureText: _obscurePassword,
                     style: TextStyle(color: Colors.white),
+                    onChanged: _updatePasswordStrength,
                     decoration: InputDecoration(
                       filled: false,
-                      labelText: 'Şifre (min 6)',
+                      labelText: 'Şifre (min 8 karakter)',
                       labelStyle: TextStyle(color: Colors.white70),
                       prefixIcon: Icon(Icons.lock, color: Colors.white70),
                       suffixIcon: IconButton(
@@ -145,6 +174,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                   ),
+                  // Password strength indicator
+                  if (_passCtrl.text.isNotEmpty) ...[
+                    SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: LinearProgressIndicator(
+                            value: _passwordStrength / 100,
+                            backgroundColor: Colors.white24,
+                            valueColor: AlwaysStoppedAnimation<Color>(_getStrengthColor()),
+                            minHeight: 4,
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          InputValidation.getPasswordStrengthLabel(_passwordStrength),
+                          style: TextStyle(
+                            color: _getStrengthColor(),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 8),
+                    // Password requirements
+                    _buildPasswordRequirements(),
+                  ],
                   SizedBox(height: 16),
                   TextField(
                     controller: _confirmPassCtrl,
@@ -245,6 +302,40 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildPasswordRequirements() {
+    final password = _passCtrl.text;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildRequirementItem('En az 8 karakter', password.length >= 8),
+        _buildRequirementItem('Büyük harf (A-Z)', password.contains(RegExp(r'[A-Z]'))),
+        _buildRequirementItem('Küçük harf (a-z)', password.contains(RegExp(r'[a-z]'))),
+        _buildRequirementItem('Rakam (0-9)', password.contains(RegExp(r'\d'))),
+        _buildRequirementItem('Özel karakter (@$!%*?&)', password.contains(RegExp(r'[@$!%*?&]'))),
+      ],
+    );
+  }
+
+  Widget _buildRequirementItem(String text, bool isMet) {
+    return Row(
+      children: [
+        Icon(
+          isMet ? Icons.check_circle : Icons.radio_button_unchecked,
+          color: isMet ? Colors.green : Colors.white54,
+          size: 16,
+        ),
+        SizedBox(width: 4),
+        Text(
+          text,
+          style: TextStyle(
+            color: isMet ? Colors.green[200] : Colors.white54,
+            fontSize: 12,
+          ),
+        ),
+      ],
     );
   }
 }
