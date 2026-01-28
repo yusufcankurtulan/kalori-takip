@@ -146,7 +146,4 @@ lib/
 - Fotoğraf işleme için Google Vision, Clarifai veya benzeri API'lar kullanılabilir
 - AI program üretimi için OpenAI veya alternatif LLM servisleri entegre edilebilir
 
-## Lisans
-
-MIT License
 
