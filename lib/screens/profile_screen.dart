@@ -82,9 +82,9 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Future<UserProfile?> _loadProfile() async {
-    // `UserService.getProfile` caches and reads from Firestore when available.
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return null;
     return await UserService.getProfile(uid);
   }
 }
+

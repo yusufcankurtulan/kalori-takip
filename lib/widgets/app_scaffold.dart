@@ -61,7 +61,7 @@ class AppScaffold extends StatelessWidget {
             type: BottomNavigationBarType.fixed,
             items: [
               BottomNavigationBarItem(icon: Icon(Icons.home), label: labelHome),
-              BottomNavigationBarItem(icon: Icon(Icons.fitness_center), label: 'Programlarım'),
+              BottomNavigationBarItem(icon: Icon(Icons.fitness_center), label: appLoc.myProgramsTitle),
               BottomNavigationBarItem(icon: Icon(Icons.person), label:labelProfile),
               BottomNavigationBarItem(icon: Icon(Icons.settings), label: labelSettings),
             ],

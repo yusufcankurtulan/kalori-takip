@@ -94,18 +94,14 @@ class _MyProgramsScreenState extends State<MyProgramsScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
-            ElevatedButton(
+            _buildStyledButton(
+              text: loc.selectProgram,
               onPressed: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => ProgramsScreen()),
                 ).then((_) => _loadProgram());
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF121A14),
-                foregroundColor: Colors.white,
-              ),
-              child: Text(loc.selectProgram),
             ),
           ],
         ),
@@ -371,31 +367,15 @@ class _MyProgramsScreenState extends State<MyProgramsScreen> {
           ],
 
           const SizedBox(height: 24),
-
-          ElevatedButton(
-  onPressed: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => ProgramsScreen()),
-    ).then((_) => _loadProgram());
-  },
-  style: ElevatedButton.styleFrom(
-    backgroundColor: const Color(0xFF121A14),
-    foregroundColor: Colors.white,
-    minimumSize: const Size(double.infinity, 56), // 👈 büyütüldü
-    padding: const EdgeInsets.symmetric(vertical: 14), // 👈 daha dolgun
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(14), // 👈 daha modern
-    ),
-  ),
-  child: Text(
-    loc.selectProgram,
-    style: const TextStyle(
-      fontSize: 16, // 👈 text biraz büyüdü
-      fontWeight: FontWeight.w600,
-    ),
-  ),
-),
+          _buildStyledButton(
+            text: loc.selectProgram,
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => ProgramsScreen()),
+              ).then((_) => _loadProgram());
+            },
+          ),
 
         ],
       ),
@@ -438,6 +418,60 @@ class _MyProgramsScreenState extends State<MyProgramsScreen> {
           const SizedBox(height: 4),
           Text(mealContent),
         ],
+      ),
+    );
+  }
+
+  Widget _buildStyledButton({
+    required String text,
+    required VoidCallback onPressed,
+  }) {
+    return Container(
+      width: double.infinity,
+      height: 56,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF2E7D32), Color(0xFF66BB6A)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF2E7D32).withOpacity(0.4),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.fitness_center,
+              size: 22,
+            ),
+            const SizedBox(width: 10),
+            Text(
+              text,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

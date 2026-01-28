@@ -71,9 +71,7 @@ class _ProgramsScreenState extends State<ProgramsScreen> {
                 child:
                     RadioListTile<String>(
                   value: key,
-                  // ignore: deprecated_member_use
                   groupValue: _selected,
-                  // ignore: deprecated_member_use
                   onChanged: (v) => setState(() => _selected = v),
                   title: Text(label),
                 ),
@@ -91,3 +89,4 @@ class _ProgramsScreenState extends State<ProgramsScreen> {
     );
   }
 }
+
